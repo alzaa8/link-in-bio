@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Love Splash | LINKINBIOT</title>
+    <style>
+        * {
+            margin: ;argin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: #FFD8F4;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Inter', system-ui, 'Poppins', sans-serif;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+        }
+
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .btn-container {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+        }
+
+        .enter-btn {
+            background: linear-gradient(105deg, #F38BD3, #F38bd3);
+            border: none;
+            color: white;
+            font-size: 0.9rem;
+            font-weight: 600;
+            padding: 0.6rem 1.5rem;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 8px 18px rgba(219, 39, 119, 0.4);
+            font-family: inherit;
+            letter-spacing: 0.5px;
+            backdrop-filter: blur(2px);
+        }
+
+        .enter-btn:hover {
+            transform: scale(1.05);
+            background: linear-gradient(105deg, #f06292, #ec489a);
+            box-shadow: 0 12px 22px rgba(219, 39, 119, 0.5);
+        }
+
+        .enter-btn:active {
+            transform: scale(0.97);
+        }
+
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.7);
+            transform: scale(0);
+            animation: rippleAnim 0.6s linear;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        @keyframes rippleAnim {
+            to {
+                transform: scale(6);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="loveCanvas"></canvas>
+    
+    <div class="btn-container">
+        <button class="enter-btn" id="enterBtn"> Masuk ke Portofolio</button>
+    </div>
+
+    <script>
+        (function() {
+            const canvas = document.getElementById('loveCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            let width = window.innerWidth;
+            let height = window.innerHeight;
+            
+            let particles = [];
+            const MAX_PARTICLES = 500;  // dinaikkan batasnya biar lebih banyak
+            
+            function resizeCanvas() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+            }
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+                for(let p of particles) {
+                    p.x = Math.min(width - 20, Math.max(20, p.x));
+                    p.y = Math.min(height - 20, Math.max(20, p.y));
+                }
+            });
+            
+            class LoveParticle {
+                constructor(x, y, vx, vy, size, alphaSpeed) {
+                    this.x = x;
+                    this.y = y;
+                    this.vx = vx;
+                    this.vy = vy;
+                    this.size = size;
+                    this.alpha = 1;
+                    this.alphaSpeed = alphaSpeed || 0.004 + Math.random() * 0.01;
+                    this.gravity = 0.08;
+                    this.rotation = Math.random() * Math.PI * 2;
+                    this.rotSpeed = (Math.random() - 0.5) * 0.03;
+                }
+                
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    this.vy += this.gravity;
+                    this.alpha -= this.alphaSpeed;
+                    this.rotation += this.rotSpeed;
+                    return this.alpha > 0 && this.y < height + 150 && this.x > -150 && this.x < width + 150;
+                }
+                
+                draw(ctx) {
+                    ctx.save();
+                    ctx.translate(this.x, this.y);
+                    ctx.rotate(this.rotation);
+                    ctx.globalAlpha = this.alpha;
+                    ctx.font = `${this.size}px "Segoe UI", "Arial", sans-serif`;
+                    ctx.fillStyle = '#e34234';
+                    ctx.shadowBlur = 0;
+                    ctx.fillText('❤️🌹', 0, 0);
+                    ctx.restore();
+                }
+            }
+            
+            function createLoveExplosion(centerX, centerY, count = 18) {
+                let added = 0;
+                for(let i = 0; i < count; i++) {
+                    if(particles.length >= MAX_PARTICLES + 80) break;
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = Math.random() * 6 + 2;
+                    const vx = Math.cos(angle) * speed * (Math.random() * 1.3);
+                    const vy = Math.sin(angle) * speed * 0.9 - 2;
+                    const size = Math.floor(Math.random() * 18 + 12);
+                    const love = new LoveParticle(
+                        centerX, centerY, vx, vy, size, 0.005 + Math.random() * 0.012
+                    );
+                    particles.push(love);
+                    added++;
+                }
+                return added;
+            }
+            
+            // spawn love lebih cepat (140ms) biar makin banyak
+            let intervalSpawn;
+            function startRegularLove() {
+                if(intervalSpawn) clearInterval(intervalSpawn);
+                intervalSpawn = setInterval(() => {
+                    if(particles.length < MAX_PARTICLES) {
+                        const side = Math.floor(Math.random() * 4);
+                        let x, y;
+                        if(side === 0) {
+                            x = Math.random() * width;
+                            y = -10;
+                        } else if(side === 1) {
+                            x = -10;
+                            y = Math.random() * height;
+                        } else if(side === 2) {
+                            x = width + 10;
+                            y = Math.random() * height;
+                        } else {
+                            x = Math.random() * width;
+                            y = height + 10;
+                        }
+                        const vx = (Math.random() - 0.5) * 1.5;
+                        const vy = (Math.random() - 0.8) * 1.8 - 0.5;
+                        const size = Math.floor(Math.random() * 20 + 10);
+                        const love = new LoveParticle(x, y, vx, vy, size, 0.004 + Math.random() * 0.009);
+                        particles.push(love);
+                    }
+                    // tambahan spawn lagi biar double
+                    if(particles.length < MAX_PARTICLES - 20) {
+                        const side2 = Math.floor(Math.random() * 4);
+                        let x2, y2;
+                        if(side2 === 0) {
+                            x2 = Math.random() * width;
+                            y2 = -10;
+                        } else if(side2 === 1) {
+                            x2 = -10;
+                            y2 = Math.random() * height;
+                        } else if(side2 === 2) {
+                            x2 = width + 10;
+                            y2 = Math.random() * height;
+                        } else {
+                            x2 = Math.random() * width;
+                            y2 = height + 10;
+                        }
+                        const vx2 = (Math.random() - 0.5) * 1.4;
+                        const vy2 = (Math.random() - 0.7) * 1.6 - 0.8;
+                        const size2 = Math.floor(Math.random() * 18 + 10);
+                        particles.push(new LoveParticle(x2, y2, vx2, vy2, size2, 0.004 + Math.random()*0.01));
+                    }
+                }, 100);  // lebih cepat dari sebelumnya
+            }
+            
+            function megaBurst() {
+                const centerX = width / 2;
+                const centerY = height / 2;
+                createLoveExplosion(centerX, centerY, 70);
+                for(let i=0;i<12;i++) {
+                    const randX = Math.random() * width;
+                    const randY = Math.random() * height;
+                    createLoveExplosion(randX, randY, 18);
+                }
+                for(let i=0;i<60;i++) {
+                    if(particles.length > MAX_PARTICLES + 100) break;
+                    const x = Math.random() * width;
+                    const y = -5;
+                    const vx = (Math.random() - 0.5) * 3.5;
+                    const vy = Math.random() * 4 + 1.5;
+                    const size = Math.floor(Math.random() * 24 + 12);
+                    particles.push(new LoveParticle(x, y, vx, vy, size, 0.006));
+                }
+                const btn = document.getElementById('enterBtn');
+                if(btn) {
+                    btn.style.transform = 'scale(0.97)';
+                    setTimeout(() => { if(btn) btn.style.transform = ''; }, 150);
+                }
+            }
+            
+            function animate() {
+                if(!ctx) return;
+                ctx.clearRect(0, 0, width, height);
+                for(let i = particles.length-1; i >= 0; i--) {
+                    const alive = particles[i].update();
+                    if(!alive) {
+                        particles.splice(i,1);
+                    } else {
+                        particles[i].draw(ctx);
+                    }
+                }
+                requestAnimationFrame(animate);
+            }
+            
+            function createRipple(event, element) {
+                const rect = element.getBoundingClientRect();
+                const x = event.clientX - rect.left;
+                const y = event.clientY - rect.top;
+                const ripple = document.createElement('span');
+                ripple.className = 'ripple';
+                ripple.style.left = x + 'px';
+                ripple.style.top = y + 'px';
+                ripple.style.position = 'absolute';
+                ripple.style.width = '8px';
+                ripple.style.height = '8px';
+                ripple.style.backgroundColor = 'rgba(255,200,220,0.8)';
+                element.style.position = 'relative';
+                element.style.overflow = 'hidden';
+                element.appendChild(ripple);
+                setTimeout(() => {
+                    if(ripple && ripple.remove) ripple.remove();
+                }, 600);
+            }
+            
+            const targetUrl = 'landing.html';   // ganti dengan file portofolio kamu
+            
+            function redirectToPortfolio() {
+                megaBurst();
+                setTimeout(() => {
+                    window.location.href = targetUrl;
+                }, 700);
+            }
+            
+            const enterBtn = document.getElementById('enterBtn');
+            enterBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                createRipple(e, enterBtn);
+                redirectToPortfolio();
+            });
+            
+            // klik di mana saja tambah love, makin banyak!
+            document.body.addEventListener('click', (e) => {
+                if(e.target === enterBtn || enterBtn.contains(e.target)) return;
+                const mouseX = e.clientX;
+                const mouseY = e.clientY;
+                for(let i=0;i<22;i++) {  // lebih banyak dari sebelumnya
+                    if(particles.length < MAX_PARTICLES + 90) {
+                        const angle = Math.random() * Math.PI * 2;
+                        const speed = Math.random() * 4 + 2;
+                        const vx = Math.cos(angle) * speed;
+                        const vy = Math.sin(angle) * speed - 1.2;
+                        const size = Math.floor(Math.random() * 20 + 12);
+                        particles.push(new LoveParticle(mouseX, mouseY, vx, vy, size, 0.007));
+                    }
+                }
+                const rippleDiv = document.createElement('div');
+                rippleDiv.style.position = 'fixed';
+                rippleDiv.style.left = (mouseX - 15) + 'px';
+                rippleDiv.style.top = (mouseY - 15) + 'px';
+                rippleDiv.style.width = '30px';
+                rippleDiv.style.height = '30px';
+                rippleDiv.style.borderRadius = '50%';
+                rippleDiv.style.background = 'radial-gradient(circle, rgba(219,39,119,0.4), transparent)';
+                rippleDiv.style.pointerEvents = 'none';
+                rippleDiv.style.zIndex = '999';
+                document.body.appendChild(rippleDiv);
+                setTimeout(() => rippleDiv.remove(), 350);
+            });
+            
+            resizeCanvas();
+            startRegularLove();
+            animate();
+            
+            // LOVE AWAL LANGSUNG BANYAK (100 biji biar rame dari awal)
+            for(let i=0;i<120;i++) {
+                const x = Math.random() * width;
+                const y = Math.random() * height;
+                const vx = (Math.random() - 0.5) * 1.6;
+                const vy = (Math.random() - 0.5) * 1.8 - 1.2;
+                const size = Math.floor(Math.random() * 24 + 10);
+                particles.push(new LoveParticle(x, y, vx, vy, size, 0.003 + Math.random()*0.008));
+            }
+            // tambah love dari pinggir langsung banyak
+            for(let i=0;i<60;i++) {
+                const side = Math.floor(Math.random() * 4);
+                let x, y;
+                if(side === 0) { x = Math.random() * width; y = -15; }
+                else if(side === 1) { x = -15; y = Math.random() * height; }
+                else if(side === 2) { x = width + 15; y = Math.random() * height; }
+                else { x = Math.random() * width; y = height + 15; }
+                const vx = (Math.random() - 0.5) * 1.8;
+                const vy = (Math.random() - 0.5) * 1.8 - 1;
+                const size = Math.floor(Math.random() * 22 + 10);
+                particles.push(new LoveParticle(x, y, vx, vy, size, 0.005));
+            }
+        })();
+    </script>
+</body>
+</html>
